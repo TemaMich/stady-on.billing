@@ -15,5 +15,7 @@
 
 ###> symfony/framework-bundle ###
 APP_ENV=dev
+APP_SECRET=46c53df03a13452aa895cc09cbba77a6
 ###< symfony/framework-bundle ###
+TRUSTED_HOSTS='^billing\.study-on\.local$'
 NGINX_PORT=82
