@@ -3,7 +3,9 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use App\DTO\UserDto;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 
@@ -123,5 +125,13 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    public static function fromDto(UserDto $dto, UserPasswordHasherInterface $hash): object
+    {
+        $user = new self;
+        $user->setEmail($dto->getEmail());
+        $user->setPassword($hash->hashPassword($user, $dto->getPassword()));
+        return $user;
     }
 }
