@@ -22,12 +22,14 @@ class UserFixtures extends Fixture
         $admin->setRoles(["ROLE_SUPER_ADMIN"]);
         $password = $this->hash->hashPassword($admin, 'pass_123456');
         $admin->setPassword($password);
+        $admin->setBalance(10000);
         $manager->persist($admin);
 
         $user = new User();
         $user->setEmail('user@user.com');
         $password = $this->hash->hashPassword($user, 'pass_123456');
         $user->setPassword($password);
+        $user->setBalance(100);
         $manager->persist($user);
         $manager->flush();
     }

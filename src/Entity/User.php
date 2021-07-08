@@ -38,6 +38,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     private $password;
 
+    /**
+     * @ORM\Column(type="float")
+     */
+    private $balance;
+
+    public function __construct()
+    {
+        $this->balance = 0;
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -127,11 +137,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         // $this->plainPassword = null;
     }
 
-    public static function fromDto(UserDto $dto, UserPasswordHasherInterface $hash): object
+    public function getBalance(): ?float
+    {
+        return $this->balance;
+    }
+
+    public function setBalance(float $balance): self
+    {
+        $this->balance = $balance;
+
+        return $this;
+    }
+
+    public static function fromDto(UserDto $dto): self
     {
         $user = new self;
         $user->setEmail($dto->getEmail());
-        $user->setPassword($hash->hashPassword($user, $dto->getPassword()));
+        $user->setPassword($dto->getPassword());
         return $user;
     }
 }
