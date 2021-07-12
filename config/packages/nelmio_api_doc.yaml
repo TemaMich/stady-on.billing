@@ -1,19 +1,21 @@
 nelmio_api_doc:
     documentation:
-        #        schemes: [http, https]
+        servers:
+            - url: http://billing.study-on.local:82/
+              description: API over HTTP
+
         info:
-            title: Symfony JWT API
-            description: Symfony JWT API docs
+            title: Stady-on.BILLING
+            description: Billing servise for study-on!
             version: 1.0.0
-        securityDefinitions:
-            Bearer:
-                type: apiKey
-                description: 'Authorization: Bearer {jwt}'
-                name: Authorization
-                in: header
+        components:
+            securitySchemes:
+                bearerAuth:
+                    type: http
+                    scheme: bearer
+                    bearerFormat: JWT
         security:
-            - Bearer: []
-    areas: # to filter documented areas
+            - bearerAuth: [ ]
+    areas:
         default:
-            path_patterns:
-                - ^/api(?!/doc$) # Accepts routes under /api except /api/doc
+            path_patterns: [ ^/api/v1/ ]

@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use Lexik\Bundle\JWTAuthenticationBundle\TokenExtractor\AuthorizationHeaderTokenExtractor;
+use OpenApi\Annotations\Schema;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\User;
 use App\DTO\UserDto;
@@ -14,22 +15,41 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
 use JMS\Serializer\SerializerBuilder;
 use Firebase\JWT\JWT;
+use OpenApi\Annotations as OA;
+use Nelmio\ApiDocBundle\Annotation\Security;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Validator\ConstraintViolation;
 use Doctrine\ORM\EntityManagerInterface;
 
+/**
+ * Class ApiController
+ * @package App\Controller
+ */
+
 class ApiController extends AbstractController
 {
-    private $params;
-
-    public function __construct(ContainerBagInterface $params)
-    {
-        $this->params = $params;
-    }
-
     /**
-     * @Route("/api/v1/auth", name="login")
+     * @OA\RequestBody(
+     *     request="order",
+     *     description="Order data in JSON format",
+     *     @OA\JsonContent(
+     *        type="object",
+     *        @OA\Property(property="username", type="string"),
+     *        @OA\Property(property="password", type="string"),
+     *     ),
+     * ),
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Register successfull",
+     *     @OA\JsonContent(
+     *        type="object",
+     *        @OA\Property(property="token", type="string"),
+     *     )
+     * )
+     * @OA\Tag(name="user")
+     * @Route("/api/v1/auth", name="login", methods={"POST"})
      */
     public function login(): Response
     {
@@ -37,6 +57,25 @@ class ApiController extends AbstractController
     }
 
     /**
+     * @OA\RequestBody(
+     *     request="order",
+     *     description="Order data in JSON format",
+     *     @OA\JsonContent(
+     *        type="object",
+     *        @OA\Property(property="username", type="string"),
+     *        @OA\Property(property="password", type="string"),
+     *     ),
+     * ),
+     *
+     * @OA\Response(
+     *     response=201,
+     *     description="Register successfull",
+     *     @OA\JsonContent(
+     *        type="object",
+     *        @OA\Property(property="token", type="string"),
+     *     )
+     * )
+     * @OA\Tag(name="user")
      * @Route("/api/v1/register", name="register",  methods={"POST"})
      */
 
@@ -68,15 +107,28 @@ class ApiController extends AbstractController
         $user->setPassword($hash->hashPassword($user, $dto->getPassword()));
         $em->persist($user);
         $em->flush();
+
         $response = [
             'token' => $JWTManager->create($user),
         ];
 
-        return new JsonResponse($response['token'], 201);
+        return new JsonResponse($response, 201);
     }
 
     /**
-     * @Route("/api/v1/users/current", name="user")
+     * @OA\Response(
+     *     response=200,
+     *     description="Register successfull",
+     *     @OA\JsonContent(
+     *        type="object",
+     *        @OA\Property(property="username", type="string"),
+     *        @OA\Property(property="role", type="string"),
+     *        @OA\Property(property="balance", type="string")
+     *     )
+     * )
+     * @Security(name="bearerAuth")
+     * @OA\Tag(name="user")
+     * @Route("/api/v1/users/current", name="user", methods = "GET")
      */
     public function getUserByToken(Request $request, EntityManagerInterface $em): Response
     {
@@ -85,12 +137,14 @@ class ApiController extends AbstractController
                 'Bearer',
                 'Authorization'
             );
+
             $token = $extractor->extract($request);
 
             $dir = $this->container->get('parameter_bag')->get('jwt_public_key');
             $public_key = file_get_contents($dir);
 
             $algorithm = $this->container->get('parameter_bag')->get('jwt_algorithm');
+
             try {
                 $jwt = (array)JWT::decode(
                     $token,
