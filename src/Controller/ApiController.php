@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use Gesdinet\JWTRefreshTokenBundle\Service\RefreshToken;
 use Lexik\Bundle\JWTAuthenticationBundle\TokenExtractor\AuthorizationHeaderTokenExtractor;
+use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
 use OpenApi\Annotations\Schema;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use App\Entity\User;
@@ -46,6 +48,7 @@ class ApiController extends AbstractController
      *     @OA\JsonContent(
      *        type="object",
      *        @OA\Property(property="token", type="string"),
+     *        @OA\Property(property="refreshToken", type="string"),
      *     )
      * )
      * @OA\Tag(name="user")
@@ -54,6 +57,35 @@ class ApiController extends AbstractController
     public function login(): Response
     {
 
+    }
+
+    /**
+     * @OA\Post (
+     * @OA\RequestBody(
+     *     request="order",
+     *     description="Order data in JSON format",
+     *     @OA\JsonContent(
+     *        type="object",
+     *        @OA\Property(property="refresh_token", type="string"),
+     *     ),
+     * ),
+     * )
+     *
+     * @OA\Response(
+     *     response=200,
+     *     description="Register successfull",
+     *     @OA\JsonContent(
+     *        type="object",
+     *        @OA\Property(property="token", type="string"),
+     *        @OA\Property(property="refreshToken", type="string"),
+     *     )
+     * )
+     * @OA\Tag(name="token")
+     * @Route("/api/v1/token/refresh", name="refresh", methods={"POST"})
+     */
+    public function refresh(Request $request, RefreshToken $refreshService)
+    {
+        return $refreshService->refresh($request);
     }
 
     /**
@@ -73,13 +105,14 @@ class ApiController extends AbstractController
      *     @OA\JsonContent(
      *        type="object",
      *        @OA\Property(property="token", type="string"),
+     *        @OA\Property(property="refreshToken", type="string"),
      *     )
      * )
      * @OA\Tag(name="user")
      * @Route("/api/v1/register", name="register",  methods={"POST"})
      */
 
-    public function register(Request $request, UserPasswordHasherInterface $hash, JWTTokenManagerInterface $JWTManager, ValidatorInterface $validator, EntityManagerInterface $em)
+    public function register(Request $request, UserPasswordHasherInterface $hash, JWTTokenManagerInterface $JWTManager, ValidatorInterface $validator, EntityManagerInterface $em, RefreshTokenManagerInterface $refreshTokenManager)
     {
         $serializer = SerializerBuilder::create()->build();
         $dto = $serializer->deserialize($request->getContent(), UserDto::class, 'json');
@@ -96,20 +129,30 @@ class ApiController extends AbstractController
         ]);
 
         if (count($users) > 0) {
-            $errorsResponse[] = sprintf('This email %s are used', $dto->getEmail());
+            $errorsResponse['message'] = sprintf('Этот пользователь %s уже существует', $dto->getEmail());
         }
 
         if (!empty($errorsResponse)) {
             return new JsonResponse($errorsResponse, 500);
         }
 
+
+
         $user = User::fromDto($dto);
         $user->setPassword($hash->hashPassword($user, $dto->getPassword()));
+
+        $refreshToken = $refreshTokenManager->create();
+        $refreshToken->setUsername($user->getEmail());
+        $refreshToken->setRefreshToken();
+        $refreshToken->setValid((new \DateTime())->modify('+1 month'));
+        $refreshTokenManager->save($refreshToken);
+
         $em->persist($user);
         $em->flush();
 
         $response = [
             'token' => $JWTManager->create($user),
+            'refresh_token' => $refreshToken->getRefreshToken(),
         ];
 
         return new JsonResponse($response, 201);
