@@ -47,4 +47,22 @@ class TransactionRepository extends ServiceEntityRepository
         ;
     }
     */
+
+    /**
+     * @return Transaction[]
+     */
+    public function findByDate(object $date): array
+    {
+        $entityManager = $this->getEntityManager();
+
+        $query = $entityManager->createQuery(
+            'SELECT t
+            FROM App\Entity\Transaction t
+            WHERE t.payTime > :date
+            ORDER BY t.payTime DESC'
+        )->setParameter('date', $date);
+
+        // returns an array of Product objects
+        return $query->getResult();
+    }
 }
