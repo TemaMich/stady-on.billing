@@ -36,21 +36,21 @@ class TransactionRepository extends ServiceEntityRepository
     }
     */
 
-    /*
-    public function findOneBySomeField($value): ?Transaction
-    {
-        return $this->createQueryBuilder('t')
-            ->andWhere('t.exampleField = :val')
-            ->setParameter('val', $value)
-            ->getQuery()
-            ->getOneOrNullResult()
-        ;
-    }
-    */
-
     /**
      * @return Transaction[]
      */
+    public function findByDate(object $date): array
+    {
+        return $this->createQueryBuilder('t')
+            ->andWhere('t.payTime > :date')
+            ->setParameter('date', $date)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+
+/*
     public function findByDate(object $date): array
     {
         $entityManager = $this->getEntityManager();
@@ -65,4 +65,6 @@ class TransactionRepository extends ServiceEntityRepository
         // returns an array of Product objects
         return $query->getResult();
     }
+*/
+
 }
